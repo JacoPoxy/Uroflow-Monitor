@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Uroflow Tracker"
+version = "1.0.0"
+id = "artifacts/uroflow-tracker"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26233
+
+[services.development]
+run = "pnpm --filter @workspace/uroflow-tracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/uroflow-tracker", "run", "build" ]
+publicDir = "artifacts/uroflow-tracker/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26233"
+BASE_PATH = "/"

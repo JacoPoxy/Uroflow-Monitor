@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "For smooth page transitions and beautiful staggered list animations"
+  "recharts": "For rendering patient voiding volume and frequency charts over time"
+  "date-fns": "For formatting dates and times in a readable way"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For validating the form with Zod"
+  "zod": "For defining client-side validation schemas matching the backend"
+  "lucide-react": "For beautiful, consistent clinical iconography"
+  "clsx": "For conditional class name joining"
+  "tailwind-merge": "For merging tailwind classes safely in UI components"
+
+images:
+  - path: "artifacts/uroflow-tracker/public/images/medical-abstract-bg.png"
+    description: "Very subtle, soft, light blue and white abstract geometric background, very clean, clinical, medical, out of focus, high key lighting, minimal"
+    aspect_ratio: "16:9"
+  - path: "artifacts/uroflow-tracker/public/images/empty-state-clipboard.png"
+    description: "3d cute stylized illustration of a medical clipboard with a water droplet, soft blue and white colors, clean background"
+    aspect_ratio: "1:1"
+
+notes:
+  - "The API is available via the pre-generated hooks in @workspace/api-client-react"
+  - "Forms use Zod schemas that mirror the OpenAPI types"
+  - "Using a clean, medical-grade UI with soft blues, distinct reds for blood presence warnings"

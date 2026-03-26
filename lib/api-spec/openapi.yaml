@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Uroflow Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: voidings
+    description: Voiding event operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,104 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /voidings:
+    get:
+      operationId: listVoidings
+      tags: [voidings]
+      summary: List voiding events
+      description: Returns all voiding events sorted by newest first
+      responses:
+        "200":
+          description: List of voiding events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VoidingEvent"
+    post:
+      operationId: createVoiding
+      tags: [voidings]
+      summary: Create a voiding event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVoidingEvent"
+      responses:
+        "201":
+          description: Created voiding event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoidingEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voidings/{id}:
+    get:
+      operationId: getVoiding
+      tags: [voidings]
+      summary: Get a voiding event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Voiding event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoidingEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteVoiding
+      tags: [voidings]
+      summary: Delete a voiding event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted successfully
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /voidings/stats/summary:
+    get:
+      operationId: getVoidingStats
+      tags: [voidings]
+      summary: Get voiding statistics summary
+      description: Returns aggregated statistics for the last 7 days and 30 days
+      responses:
+        "200":
+          description: Statistics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoidingStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +133,150 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    VoidingEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        voidedAt:
+          type: string
+          format: date-time
+        volumeMl:
+          type: integer
+          minimum: 0
+          description: Volume voided in milliliters
+        durationSeconds:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Total time to fully void in seconds
+        urineColor:
+          type: string
+          enum: [pale_yellow, yellow, dark_yellow, amber, orange, pink, red, brown, clear, other]
+          description: Color of the urine
+        cloudiness:
+          type: string
+          enum: [clear, slightly_cloudy, cloudy, very_cloudy]
+          description: Clarity/cloudiness of the urine
+        bloodPresent:
+          type: boolean
+          description: Whether blood was visible in the urine
+        urgency:
+          type: string
+          enum: [none, mild, moderate, severe]
+          nullable: true
+          description: Urgency level felt before voiding
+        painLevel:
+          type: integer
+          minimum: 0
+          maximum: 10
+          nullable: true
+          description: Pain level on a scale of 0-10
+        stream:
+          type: string
+          enum: [strong, normal, weak, intermittent, dribbling]
+          nullable: true
+          description: Urine stream quality
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - voidedAt
+        - volumeMl
+        - urineColor
+        - cloudiness
+        - bloodPresent
+        - createdAt
+
+    CreateVoidingEvent:
+      type: object
+      properties:
+        voidedAt:
+          type: string
+          format: date-time
+        volumeMl:
+          type: integer
+          minimum: 0
+        durationSeconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        urineColor:
+          type: string
+          enum: [pale_yellow, yellow, dark_yellow, amber, orange, pink, red, brown, clear, other]
+        cloudiness:
+          type: string
+          enum: [clear, slightly_cloudy, cloudy, very_cloudy]
+        bloodPresent:
+          type: boolean
+        urgency:
+          type: string
+          enum: [none, mild, moderate, severe]
+          nullable: true
+        painLevel:
+          type: integer
+          minimum: 0
+          maximum: 10
+          nullable: true
+        stream:
+          type: string
+          enum: [strong, normal, weak, intermittent, dribbling]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - voidedAt
+        - volumeMl
+        - urineColor
+        - cloudiness
+        - bloodPresent
+
+    VoidingStats:
+      type: object
+      properties:
+        last7Days:
+          $ref: "#/components/schemas/StatsPeriod"
+        last30Days:
+          $ref: "#/components/schemas/StatsPeriod"
+        totalRecords:
+          type: integer
+      required:
+        - last7Days
+        - last30Days
+        - totalRecords
+
+    StatsPeriod:
+      type: object
+      properties:
+        count:
+          type: integer
+        avgVolumeMl:
+          type: number
+          nullable: true
+        totalVolumeMl:
+          type: integer
+        bloodIncidents:
+          type: integer
+        avgDurationSeconds:
+          type: number
+          nullable: true
+      required:
+        - count
+        - avgVolumeMl
+        - totalVolumeMl
+        - bloodIncidents
+        - avgDurationSeconds
