@@ -71,6 +71,7 @@ router.post("/", async (req: Request, res: Response) => {
   const insertResult = insertVoidingSchema.safeParse({
     ...bodyResult.data,
     voidedAt: new Date(bodyResult.data.voidedAt),
+    qmax: bodyResult.data.qmax != null ? String(bodyResult.data.qmax) : null,
   });
   if (!insertResult.success) {
     res.status(400).json({ error: "Validation failed", details: insertResult.error.errors });
@@ -79,7 +80,11 @@ router.post("/", async (req: Request, res: Response) => {
 
   try {
     const [created] = await db.insert(voidingsTable).values(insertResult.data).returning();
-    res.status(201).json(created);
+    // Convert qmax back to number for response
+    res.status(201).json({
+      ...created,
+      qmax: created.qmax != null ? parseFloat(String(created.qmax)) : null,
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to create voiding record");
     res.status(500).json({ error: "Failed to create voiding record" });
@@ -104,7 +109,10 @@ router.get("/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    res.json(voiding);
+    res.json({
+      ...voiding,
+      qmax: voiding.qmax != null ? parseFloat(String(voiding.qmax)) : null,
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to get voiding");
     res.status(500).json({ error: "Failed to fetch voiding record" });

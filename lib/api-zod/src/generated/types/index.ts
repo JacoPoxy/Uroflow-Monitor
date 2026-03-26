@@ -7,7 +7,6 @@
  */
 
 export * from "./createVoidingEvent";
-export * from "./createVoidingEventCloudiness";
 export * from "./createVoidingEventStream";
 export * from "./createVoidingEventUrgency";
 export * from "./createVoidingEventUrineColor";
@@ -15,7 +14,6 @@ export * from "./errorResponse";
 export * from "./healthStatus";
 export * from "./statsPeriod";
 export * from "./voidingEvent";
-export * from "./voidingEventCloudiness";
 export * from "./voidingEventStream";
 export * from "./voidingEventUrgency";
 export * from "./voidingEventUrineColor";

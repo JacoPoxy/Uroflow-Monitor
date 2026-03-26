@@ -1,6 +1,5 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { VoidingEventUrineColor } from "@workspace/api-client-react";
 
 interface UrineColorPickerProps {
   value: string;
@@ -8,23 +7,18 @@ interface UrineColorPickerProps {
   error?: boolean;
 }
 
-const colorMap: Record<string, { hex: string; label: string }> = {
-  pale_yellow: { hex: "#FFFFE0", label: "Pale" },
-  yellow: { hex: "#FFF000", label: "Yellow" },
-  dark_yellow: { hex: "#FFD700", label: "Dark" },
-  amber: { hex: "#FFBF00", label: "Amber" },
-  orange: { hex: "#FFA500", label: "Orange" },
-  pink: { hex: "#FFC0CB", label: "Pink" },
-  red: { hex: "#FF4444", label: "Red" },
-  brown: { hex: "#8B4513", label: "Brown" },
-  clear: { hex: "#FFFFFF", label: "Clear" },
-  other: { hex: "#A0A0A0", label: "Other" },
-};
+const colorOptions: { key: string; hex: string; label: string; border?: string }[] = [
+  { key: "clear",       hex: "#F0F9FF", label: "Clear",      border: "#BAE6FD" },
+  { key: "pale_yellow", hex: "#FEFCE8", label: "Pale Yellow", border: "#FDE68A" },
+  { key: "yellow",      hex: "#FEF08A", label: "Yellow",     border: "#EAB308" },
+  { key: "dark_yellow", hex: "#FCD34D", label: "Dark Yellow", border: "#D97706" },
+  { key: "orange",      hex: "#FB923C", label: "Orange",     border: "#EA580C" },
+];
 
 export function UrineColorPicker({ value, onChange, error }: UrineColorPickerProps) {
   return (
-    <div className={cn("grid grid-cols-5 gap-3", error && "p-2 rounded-xl bg-destructive/5 border border-destructive/20")}>
-      {Object.entries(colorMap).map(([key, config]) => {
+    <div className={cn("flex gap-3", error && "p-2 rounded-xl bg-destructive/5 border border-destructive/20")}>
+      {colorOptions.map(({ key, hex, label, border }) => {
         const isSelected = value === key;
         return (
           <button
@@ -32,27 +26,29 @@ export function UrineColorPicker({ value, onChange, error }: UrineColorPickerPro
             type="button"
             onClick={() => onChange(key)}
             className={cn(
-              "flex flex-col items-center gap-2 group transition-all duration-200 outline-none",
+              "flex flex-col items-center gap-2 flex-1 group transition-all duration-200 outline-none",
             )}
-            title={config.label}
+            title={label}
           >
-            <div 
+            <div
               className={cn(
-                "w-12 h-12 rounded-full border-2 shadow-sm transition-all duration-300 relative",
-                isSelected ? "scale-110 border-primary shadow-primary/20 ring-4 ring-primary/10" : "border-black/5 hover:scale-105 hover:shadow-md",
-                key === 'clear' && !isSelected && "border-slate-200"
+                "w-full aspect-square rounded-xl border-2 transition-all duration-200 relative",
+                isSelected
+                  ? "scale-105 shadow-md ring-2 ring-offset-2 ring-primary"
+                  : "hover:scale-103 hover:shadow-sm",
               )}
-              style={{ backgroundColor: config.hex }}
+              style={{
+                backgroundColor: hex,
+                borderColor: isSelected ? "var(--color-primary, #3B82F6)" : (border ?? "#E5E7EB"),
+              }}
+            />
+            <span
+              className={cn(
+                "text-[10px] font-medium text-center leading-tight transition-colors",
+                isSelected ? "text-primary font-bold" : "text-slate-500",
+              )}
             >
-              {isSelected && (
-                <div className="absolute inset-0 rounded-full border-2 border-white/50 m-1 mix-blend-overlay"></div>
-              )}
-            </div>
-            <span className={cn(
-              "text-[10px] font-medium transition-colors",
-              isSelected ? "text-primary font-bold" : "text-slate-500"
-            )}>
-              {config.label}
+              {label}
             </span>
           </button>
         );

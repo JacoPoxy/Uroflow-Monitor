@@ -15,17 +15,17 @@ import { format } from "date-fns";
 import { Droplet, AlertCircle, ArrowLeft, Loader2, X } from "lucide-react";
 import { Link } from "wouter";
 
-// Mirror of OpenAPI CreateVoidingEvent
 const formSchema = z.object({
   voidedAt: z.string().min(1, "Date and time required"),
   volumeMl: z.coerce.number().min(1, "Volume is required and must be > 0"),
-  durationSeconds: z.coerce.number().min(0).optional().or(z.literal(0)),
-  urineColor: z.enum(['pale_yellow', 'yellow', 'dark_yellow', 'amber', 'orange', 'pink', 'red', 'brown', 'clear', 'other']),
-  cloudiness: z.enum(['clear', 'slightly_cloudy', 'cloudy', 'very_cloudy']),
+  qmax: z.coerce.number().min(0).optional().nullable(),
+  durationSeconds: z.coerce.number().int().min(0).optional().nullable(),
+  urineColor: z.enum(["clear", "pale_yellow", "yellow", "dark_yellow", "orange"]),
+  cloudy: z.boolean(),
   bloodPresent: z.boolean(),
-  urgency: z.enum(['none', 'mild', 'moderate', 'severe']).optional(),
+  urgency: z.enum(["none", "mild", "moderate", "severe"]).optional(),
   painLevel: z.coerce.number().min(0).max(10).optional().or(z.literal(0)),
-  stream: z.enum(['strong', 'normal', 'weak', 'intermittent', 'dribbling']).optional(),
+  stream: z.enum(["strong", "normal", "weak", "intermittent", "dribbling"]).optional(),
   notes: z.string().max(500).optional(),
 });
 
@@ -52,8 +52,10 @@ export default function LogEntry() {
     defaultValues: {
       voidedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       volumeMl: 0,
+      qmax: undefined,
+      durationSeconds: undefined,
       urineColor: "yellow",
-      cloudiness: "clear",
+      cloudy: false,
       bloodPresent: false,
       urgency: "none",
       painLevel: 0,
@@ -63,6 +65,7 @@ export default function LogEntry() {
   });
 
   const bloodPresent = watch("bloodPresent");
+  const cloudy = watch("cloudy");
 
   const HUNDREDS = [100, 200, 300, 400];
   const EXTRAS = [25, 50, 75];
@@ -89,20 +92,20 @@ export default function LogEntry() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Clean up empty optional numbers
       const payload = {
         ...data,
         voidedAt: new Date(data.voidedAt).toISOString(),
-        durationSeconds: data.durationSeconds || null,
-        painLevel: data.painLevel || null,
+        qmax: data.qmax ?? null,
+        durationSeconds: data.durationSeconds ?? null,
+        painLevel: data.painLevel ?? null,
       };
 
-      // @ts-ignore - The types mostly match but typescript might complain about the exact string union types vs enums
+      // @ts-ignore
       await createMutation.mutateAsync({ data: payload });
-      
+
       queryClient.invalidateQueries({ queryKey: getListVoidingsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetVoidingStatsQueryKey() });
-      
+
       toast({ title: "Entry logged successfully!" });
       setLocation("/history");
     } catch (error) {
@@ -114,7 +117,7 @@ export default function LogEntry() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
-        
+
         <div className="flex items-center gap-4">
           <Link href="/">
             <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm border border-slate-100">
@@ -128,7 +131,7 @@ export default function LogEntry() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          
+
           {/* Section 1: Core Metrics */}
           <Card>
             <CardContent className="p-6 md:p-8 space-y-6">
@@ -139,12 +142,15 @@ export default function LogEntry() {
                 <h3 className="text-lg font-bold font-display">Core Metrics</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Date & Time <span className="text-red-500">*</span></Label>
-                  <Input type="datetime-local" {...register("voidedAt")} className={errors.voidedAt ? "border-red-500" : ""} />
-                  {errors.voidedAt && <p className="text-xs text-red-500">{errors.voidedAt.message}</p>}
-                </div>
+              {/* Date & Time */}
+              <div className="space-y-2">
+                <Label>Date & Time <span className="text-red-500">*</span></Label>
+                <Input
+                  type="datetime-local"
+                  {...register("voidedAt")}
+                  className={errors.voidedAt ? "border-red-500" : ""}
+                />
+                {errors.voidedAt && <p className="text-xs text-red-500">{errors.voidedAt.message}</p>}
               </div>
 
               {/* Volume Button Picker */}
@@ -168,11 +174,9 @@ export default function LogEntry() {
                   </div>
                 </div>
 
-                {/* Hidden input for react-hook-form */}
                 <input type="hidden" {...register("volumeMl", { valueAsNumber: true })} />
 
                 <div className="space-y-3">
-                  {/* Hundreds row */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Step 1 — Hundreds</p>
                     <div className="grid grid-cols-4 gap-2">
@@ -195,7 +199,6 @@ export default function LogEntry() {
                     </div>
                   </div>
 
-                  {/* Extras row */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Step 2 — Fine Tune (optional)</p>
                     <div className="grid grid-cols-3 gap-2">
@@ -222,11 +225,36 @@ export default function LogEntry() {
                 {errors.volumeMl && <p className="text-xs text-red-500">Please select a volume amount.</p>}
               </div>
 
-              <div className="space-y-2 pt-2">
-                <Label>Duration (Seconds) - Optional</Label>
-                <div className="relative md:w-1/2">
-                  <Input type="number" min="0" placeholder="e.g. 45" {...register("durationSeconds")} />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">sec</span>
+              {/* Qmax & Duration */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <div className="space-y-2">
+                  <Label>Qmax (ml/s) — Optional</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="e.g. 12.5"
+                      {...register("qmax")}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">ml/s</span>
+                  </div>
+                  <p className="text-xs text-slate-400">Maximum flow rate</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Duration (seconds) — Optional</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 45"
+                      {...register("durationSeconds")}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">sec</span>
+                  </div>
+                  <p className="text-xs text-slate-400">Total time to void</p>
                 </div>
               </div>
             </CardContent>
@@ -239,36 +267,67 @@ export default function LogEntry() {
                 <h3 className="text-lg font-bold font-display">Visual Assessment</h3>
               </div>
 
+              {/* Urine Color */}
               <div className="space-y-4">
                 <Label className="text-base">Urine Color</Label>
                 <Controller
                   control={control}
                   name="urineColor"
                   render={({ field }) => (
-                    <UrineColorPicker 
-                      value={field.value} 
-                      onChange={field.onChange} 
+                    <UrineColorPicker
+                      value={field.value}
+                      onChange={field.onChange}
                       error={!!errors.urineColor}
                     />
                   )}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <Label>Clarity / Cloudiness</Label>
-                  <Select {...register("cloudiness")}>
-                    <option value="clear">Clear (Normal)</option>
-                    <option value="slightly_cloudy">Slightly Cloudy</option>
-                    <option value="cloudy">Cloudy</option>
-                    <option value="very_cloudy">Very Cloudy / Turbid</option>
-                  </Select>
-                </div>
+              {/* Cloudy toggle + Blood toggle side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                <div className={`p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-center ${bloodPresent ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-transparent'}`}>
+                {/* Cloudy / Clear toggle */}
+                <Controller
+                  control={control}
+                  name="cloudy"
+                  render={({ field }) => (
+                    <div className="p-4 rounded-2xl border-2 transition-all duration-300 bg-slate-50 border-transparent">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-base text-slate-700">Appearance</Label>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white rounded-xl p-1 border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => field.onChange(false)}
+                          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                            !field.value
+                              ? "bg-primary text-white shadow-sm"
+                              : "text-slate-500 hover:text-slate-700"
+                          }`}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => field.onChange(true)}
+                          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                            field.value
+                              ? "bg-amber-500 text-white shadow-sm"
+                              : "text-slate-500 hover:text-slate-700"
+                          }`}
+                        >
+                          Cloudy
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                />
+
+                {/* Blood Present toggle */}
+                <div className={`p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-center ${bloodPresent ? "bg-red-50 border-red-200" : "bg-slate-50 border-transparent"}`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <Label className={`text-base ${bloodPresent ? 'text-red-700' : 'text-slate-700'}`}>Blood Present?</Label>
+                      <Label className={`text-base ${bloodPresent ? "text-red-700" : "text-slate-700"}`}>Blood Present?</Label>
                       <p className="text-xs text-slate-500">Visible hematuria</p>
                     </div>
                     <Controller
@@ -330,12 +389,12 @@ export default function LogEntry() {
                     {watch("painLevel")} / 10
                   </span>
                 </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="10" 
-                  step="1" 
-                  {...register("painLevel")} 
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="1"
+                  {...register("painLevel")}
                   className="w-full accent-primary h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-slate-500 font-medium px-1">
@@ -343,7 +402,6 @@ export default function LogEntry() {
                   <span>Severe Pain (10)</span>
                 </div>
               </div>
-
             </CardContent>
           </Card>
 
@@ -351,18 +409,18 @@ export default function LogEntry() {
           <Card>
             <CardContent className="p-6 md:p-8 space-y-4">
               <Label>Additional Notes</Label>
-              <Textarea 
-                placeholder="Any other symptoms, dietary notes, or observations..." 
-                {...register("notes")} 
+              <Textarea
+                placeholder="Any other symptoms, dietary notes, or observations..."
+                {...register("notes")}
               />
             </CardContent>
           </Card>
 
           {/* Submit */}
           <div className="sticky bottom-4 z-50 md:static">
-            <Button 
-              type="submit" 
-              size="lg" 
+            <Button
+              type="submit"
+              size="lg"
               className="w-full text-lg shadow-xl shadow-primary/20 md:w-auto md:min-w-[250px]"
               disabled={isSubmitting || createMutation.isPending}
             >
@@ -373,7 +431,6 @@ export default function LogEntry() {
               )}
             </Button>
           </div>
-
         </form>
       </div>
     </Layout>

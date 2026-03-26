@@ -10,14 +10,9 @@ export type CreateVoidingEventUrineColor =
   (typeof CreateVoidingEventUrineColor)[keyof typeof CreateVoidingEventUrineColor];
 
 export const CreateVoidingEventUrineColor = {
+  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
-  amber: "amber",
   orange: "orange",
-  pink: "pink",
-  red: "red",
-  brown: "brown",
-  clear: "clear",
-  other: "other",
 } as const;

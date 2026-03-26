@@ -5,7 +5,6 @@
  * Uroflow Tracker API
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateVoidingEventCloudiness } from "./createVoidingEventCloudiness";
 import type { CreateVoidingEventStream } from "./createVoidingEventStream";
 import type { CreateVoidingEventUrgency } from "./createVoidingEventUrgency";
 import type { CreateVoidingEventUrineColor } from "./createVoidingEventUrineColor";
@@ -14,10 +13,12 @@ export interface CreateVoidingEvent {
   voidedAt: Date;
   /** @minimum 0 */
   volumeMl: number;
+  /** Maximum urine flow rate in ml/s (one decimal place) */
+  qmax?: number | null;
   /** @minimum 0 */
   durationSeconds?: number | null;
   urineColor: CreateVoidingEventUrineColor;
-  cloudiness: CreateVoidingEventCloudiness;
+  cloudy: boolean;
   bloodPresent: boolean;
   urgency?: CreateVoidingEventUrgency;
   /**

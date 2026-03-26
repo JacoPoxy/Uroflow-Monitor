@@ -20,29 +20,11 @@ export type VoidingEventUrineColor =
   (typeof VoidingEventUrineColor)[keyof typeof VoidingEventUrineColor];
 
 export const VoidingEventUrineColor = {
+  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
-  amber: "amber",
   orange: "orange",
-  pink: "pink",
-  red: "red",
-  brown: "brown",
-  clear: "clear",
-  other: "other",
-} as const;
-
-/**
- * Clarity/cloudiness of the urine
- */
-export type VoidingEventCloudiness =
-  (typeof VoidingEventCloudiness)[keyof typeof VoidingEventCloudiness];
-
-export const VoidingEventCloudiness = {
-  clear: "clear",
-  slightly_cloudy: "slightly_cloudy",
-  cloudy: "cloudy",
-  very_cloudy: "very_cloudy",
 } as const;
 
 /**
@@ -82,6 +64,8 @@ export interface VoidingEvent {
    * @minimum 0
    */
   volumeMl: number;
+  /** Maximum urine flow rate in ml/s (one decimal place) */
+  qmax?: number | null;
   /**
    * Total time to fully void in seconds
    * @minimum 0
@@ -89,8 +73,8 @@ export interface VoidingEvent {
   durationSeconds?: number | null;
   /** Color of the urine */
   urineColor: VoidingEventUrineColor;
-  /** Clarity/cloudiness of the urine */
-  cloudiness: VoidingEventCloudiness;
+  /** Whether the urine appears cloudy (false = clear) */
+  cloudy: boolean;
   /** Whether blood was visible in the urine */
   bloodPresent: boolean;
   /** Urgency level felt before voiding */
@@ -112,26 +96,11 @@ export type CreateVoidingEventUrineColor =
   (typeof CreateVoidingEventUrineColor)[keyof typeof CreateVoidingEventUrineColor];
 
 export const CreateVoidingEventUrineColor = {
+  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
-  amber: "amber",
   orange: "orange",
-  pink: "pink",
-  red: "red",
-  brown: "brown",
-  clear: "clear",
-  other: "other",
-} as const;
-
-export type CreateVoidingEventCloudiness =
-  (typeof CreateVoidingEventCloudiness)[keyof typeof CreateVoidingEventCloudiness];
-
-export const CreateVoidingEventCloudiness = {
-  clear: "clear",
-  slightly_cloudy: "slightly_cloudy",
-  cloudy: "cloudy",
-  very_cloudy: "very_cloudy",
 } as const;
 
 export type CreateVoidingEventUrgency =
@@ -161,10 +130,12 @@ export interface CreateVoidingEvent {
   voidedAt: string;
   /** @minimum 0 */
   volumeMl: number;
+  /** Maximum urine flow rate in ml/s (one decimal place) */
+  qmax?: number | null;
   /** @minimum 0 */
   durationSeconds?: number | null;
   urineColor: CreateVoidingEventUrineColor;
-  cloudiness: CreateVoidingEventCloudiness;
+  cloudy: boolean;
   bloodPresent: boolean;
   urgency?: CreateVoidingEventUrgency;
   /**

@@ -5,7 +5,6 @@
  * Uroflow Tracker API
  * OpenAPI spec version: 0.1.0
  */
-import type { VoidingEventCloudiness } from "./voidingEventCloudiness";
 import type { VoidingEventStream } from "./voidingEventStream";
 import type { VoidingEventUrgency } from "./voidingEventUrgency";
 import type { VoidingEventUrineColor } from "./voidingEventUrineColor";
@@ -18,6 +17,8 @@ export interface VoidingEvent {
    * @minimum 0
    */
   volumeMl: number;
+  /** Maximum urine flow rate in ml/s (one decimal place) */
+  qmax?: number | null;
   /**
    * Total time to fully void in seconds
    * @minimum 0
@@ -25,8 +26,8 @@ export interface VoidingEvent {
   durationSeconds?: number | null;
   /** Color of the urine */
   urineColor: VoidingEventUrineColor;
-  /** Clarity/cloudiness of the urine */
-  cloudiness: VoidingEventCloudiness;
+  /** Whether the urine appears cloudy (false = clear) */
+  cloudy: boolean;
   /** Whether blood was visible in the urine */
   bloodPresent: boolean;
   /** Urgency level felt before voiding */

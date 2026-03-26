@@ -33,28 +33,21 @@ export const ListVoidingsResponseItem = zod.object({
     .number()
     .min(listVoidingsResponseVolumeMlMin)
     .describe("Volume voided in milliliters"),
+  qmax: zod
+    .number()
+    .nullish()
+    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
   durationSeconds: zod
     .number()
     .min(listVoidingsResponseDurationSecondsMin)
     .nullish()
     .describe("Total time to fully void in seconds"),
   urineColor: zod
-    .enum([
-      "pale_yellow",
-      "yellow",
-      "dark_yellow",
-      "amber",
-      "orange",
-      "pink",
-      "red",
-      "brown",
-      "clear",
-      "other",
-    ])
+    .enum(["clear", "pale_yellow", "yellow", "dark_yellow", "orange"])
     .describe("Color of the urine"),
-  cloudiness: zod
-    .enum(["clear", "slightly_cloudy", "cloudy", "very_cloudy"])
-    .describe("Clarity\/cloudiness of the urine"),
+  cloudy: zod
+    .boolean()
+    .describe("Whether the urine appears cloudy (false = clear)"),
   bloodPresent: zod
     .boolean()
     .describe("Whether blood was visible in the urine"),
@@ -90,23 +83,22 @@ export const createVoidingBodyPainLevelMax = 10;
 export const CreateVoidingBody = zod.object({
   voidedAt: zod.date(),
   volumeMl: zod.number().min(createVoidingBodyVolumeMlMin),
+  qmax: zod
+    .number()
+    .nullish()
+    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
   durationSeconds: zod
     .number()
     .min(createVoidingBodyDurationSecondsMin)
     .nullish(),
   urineColor: zod.enum([
+    "clear",
     "pale_yellow",
     "yellow",
     "dark_yellow",
-    "amber",
     "orange",
-    "pink",
-    "red",
-    "brown",
-    "clear",
-    "other",
   ]),
-  cloudiness: zod.enum(["clear", "slightly_cloudy", "cloudy", "very_cloudy"]),
+  cloudy: zod.boolean(),
   bloodPresent: zod.boolean(),
   urgency: zod.enum(["none", "mild", "moderate", "severe"]).nullish(),
   painLevel: zod
@@ -141,28 +133,21 @@ export const GetVoidingResponse = zod.object({
     .number()
     .min(getVoidingResponseVolumeMlMin)
     .describe("Volume voided in milliliters"),
+  qmax: zod
+    .number()
+    .nullish()
+    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
   durationSeconds: zod
     .number()
     .min(getVoidingResponseDurationSecondsMin)
     .nullish()
     .describe("Total time to fully void in seconds"),
   urineColor: zod
-    .enum([
-      "pale_yellow",
-      "yellow",
-      "dark_yellow",
-      "amber",
-      "orange",
-      "pink",
-      "red",
-      "brown",
-      "clear",
-      "other",
-    ])
+    .enum(["clear", "pale_yellow", "yellow", "dark_yellow", "orange"])
     .describe("Color of the urine"),
-  cloudiness: zod
-    .enum(["clear", "slightly_cloudy", "cloudy", "very_cloudy"])
-    .describe("Clarity\/cloudiness of the urine"),
+  cloudy: zod
+    .boolean()
+    .describe("Whether the urine appears cloudy (false = clear)"),
   bloodPresent: zod
     .boolean()
     .describe("Whether blood was visible in the urine"),

@@ -153,6 +153,10 @@ components:
           type: integer
           minimum: 0
           description: Volume voided in milliliters
+        qmax:
+          type: number
+          nullable: true
+          description: Maximum urine flow rate in ml/s (one decimal place)
         durationSeconds:
           type: integer
           minimum: 0
@@ -160,12 +164,11 @@ components:
           description: Total time to fully void in seconds
         urineColor:
           type: string
-          enum: [pale_yellow, yellow, dark_yellow, amber, orange, pink, red, brown, clear, other]
+          enum: [clear, pale_yellow, yellow, dark_yellow, orange]
           description: Color of the urine
-        cloudiness:
-          type: string
-          enum: [clear, slightly_cloudy, cloudy, very_cloudy]
-          description: Clarity/cloudiness of the urine
+        cloudy:
+          type: boolean
+          description: Whether the urine appears cloudy (false = clear)
         bloodPresent:
           type: boolean
           description: Whether blood was visible in the urine
@@ -197,7 +200,7 @@ components:
         - voidedAt
         - volumeMl
         - urineColor
-        - cloudiness
+        - cloudy
         - bloodPresent
         - createdAt
 
@@ -210,16 +213,19 @@ components:
         volumeMl:
           type: integer
           minimum: 0
+        qmax:
+          type: number
+          nullable: true
+          description: Maximum urine flow rate in ml/s (one decimal place)
         durationSeconds:
           type: integer
           minimum: 0
           nullable: true
         urineColor:
           type: string
-          enum: [pale_yellow, yellow, dark_yellow, amber, orange, pink, red, brown, clear, other]
-        cloudiness:
-          type: string
-          enum: [clear, slightly_cloudy, cloudy, very_cloudy]
+          enum: [clear, pale_yellow, yellow, dark_yellow, orange]
+        cloudy:
+          type: boolean
         bloodPresent:
           type: boolean
         urgency:
@@ -242,7 +248,7 @@ components:
         - voidedAt
         - volumeMl
         - urineColor
-        - cloudiness
+        - cloudy
         - bloodPresent
 
     VoidingStats:
