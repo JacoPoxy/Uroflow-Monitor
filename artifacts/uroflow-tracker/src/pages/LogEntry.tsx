@@ -1,6 +1,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react";
 import { useCreateVoiding, getListVoidingsQueryKey, getGetVoidingStatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { UrineColorPicker } from "@/components/UrineColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Droplet, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { Droplet, AlertCircle, ArrowLeft, Loader2, X } from "lucide-react";
 import { Link } from "wouter";
 
 // Mirror of OpenAPI CreateVoidingEvent
@@ -36,16 +37,21 @@ export default function LogEntry() {
   const queryClient = useQueryClient();
   const createMutation = useCreateVoiding();
 
+  const [volumeHundreds, setVolumeHundreds] = useState<number | null>(null);
+  const [volumeExtras, setVolumeExtras] = useState<number | null>(null);
+
   const {
     register,
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       voidedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      volumeMl: 0,
       urineColor: "yellow",
       cloudiness: "clear",
       bloodPresent: false,
@@ -57,6 +63,29 @@ export default function LogEntry() {
   });
 
   const bloodPresent = watch("bloodPresent");
+
+  const HUNDREDS = [100, 200, 300, 400];
+  const EXTRAS = [25, 50, 75];
+
+  const handleHundredsSelect = (val: number) => {
+    const next = volumeHundreds === val ? null : val;
+    setVolumeHundreds(next);
+    setValue("volumeMl", (next ?? 0) + (volumeExtras ?? 0), { shouldValidate: true });
+  };
+
+  const handleExtrasSelect = (val: number) => {
+    const next = volumeExtras === val ? null : val;
+    setVolumeExtras(next);
+    setValue("volumeMl", (volumeHundreds ?? 0) + (next ?? 0), { shouldValidate: true });
+  };
+
+  const clearVolume = () => {
+    setVolumeHundreds(null);
+    setVolumeExtras(null);
+    setValue("volumeMl", 0, { shouldValidate: true });
+  };
+
+  const totalVolume = (volumeHundreds ?? 0) + (volumeExtras ?? 0);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -116,15 +145,81 @@ export default function LogEntry() {
                   <Input type="datetime-local" {...register("voidedAt")} className={errors.voidedAt ? "border-red-500" : ""} />
                   {errors.voidedAt && <p className="text-xs text-red-500">{errors.voidedAt.message}</p>}
                 </div>
-                
-                <div className="space-y-2">
+              </div>
+
+              {/* Volume Button Picker */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <Label>Volume (ml) <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Input type="number" min="0" placeholder="e.g. 250" {...register("volumeMl")} className={errors.volumeMl ? "border-red-500 text-lg font-bold" : "text-lg font-bold"} />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">ml</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-2xl font-bold tabular-nums ${totalVolume > 0 ? "text-primary" : "text-slate-300"}`}>
+                      {totalVolume > 0 ? `${totalVolume} ml` : "— ml"}
+                    </span>
+                    {totalVolume > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearVolume}
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                        aria-label="Clear volume"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                  {errors.volumeMl && <p className="text-xs text-red-500">{errors.volumeMl.message}</p>}
                 </div>
+
+                {/* Hidden input for react-hook-form */}
+                <input type="hidden" {...register("volumeMl", { valueAsNumber: true })} />
+
+                <div className="space-y-3">
+                  {/* Hundreds row */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Step 1 — Hundreds</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {HUNDREDS.map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleHundredsSelect(val)}
+                          className={`
+                            py-3 rounded-xl font-bold text-base border-2 transition-all duration-150 select-none
+                            ${volumeHundreds === val
+                              ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-[0.97]"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-primary/50 hover:bg-primary/5"
+                            }
+                          `}
+                        >
+                          {val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Extras row */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Step 2 — Fine Tune (optional)</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {EXTRAS.map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleExtrasSelect(val)}
+                          className={`
+                            py-3 rounded-xl font-bold text-base border-2 transition-all duration-150 select-none
+                            ${volumeExtras === val
+                              ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-[0.97]"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-primary/50 hover:bg-primary/5"
+                            }
+                          `}
+                        >
+                          +{val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {errors.volumeMl && <p className="text-xs text-red-500">Please select a volume amount.</p>}
               </div>
 
               <div className="space-y-2 pt-2">
