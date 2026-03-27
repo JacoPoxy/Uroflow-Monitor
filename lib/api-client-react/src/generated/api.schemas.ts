@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -13,37 +13,58 @@ export interface ErrorResponse {
   error: string;
 }
 
-/**
- * Color of the urine
- */
 export type VoidingEventUrineColor =
   (typeof VoidingEventUrineColor)[keyof typeof VoidingEventUrineColor];
 
 export const VoidingEventUrineColor = {
-  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
   orange: "orange",
+  dark_orange: "dark_orange",
 } as const;
 
-/**
- * Urgency level felt before voiding
- */
+export type VoidingEventAppearanceTagsItem =
+  (typeof VoidingEventAppearanceTagsItem)[keyof typeof VoidingEventAppearanceTagsItem];
+
+export const VoidingEventAppearanceTagsItem = {
+  clots: "clots",
+  flakes: "flakes",
+  specks: "specks",
+} as const;
+
+export type VoidingEventHematuria =
+  (typeof VoidingEventHematuria)[keyof typeof VoidingEventHematuria];
+
+export const VoidingEventHematuria = {
+  none: "none",
+  visible_hematuria: "visible_hematuria",
+  post_drops: "post_drops",
+  post_pink: "post_pink",
+} as const;
+
 export type VoidingEventUrgency =
   | (typeof VoidingEventUrgency)[keyof typeof VoidingEventUrgency]
   | null;
 
 export const VoidingEventUrgency = {
   none: "none",
-  mild: "mild",
-  moderate: "moderate",
-  severe: "severe",
+  awareness: "awareness",
+  urgent: "urgent",
+  highly_urgent: "highly_urgent",
+  sudden_onset: "sudden_onset",
 } as const;
 
-/**
- * Urine stream quality
- */
+export type VoidingEventPainLocationsItem =
+  (typeof VoidingEventPainLocationsItem)[keyof typeof VoidingEventPainLocationsItem];
+
+export const VoidingEventPainLocationsItem = {
+  spasm: "spasm",
+  perineum: "perineum",
+  shaft: "shaft",
+  tip: "tip",
+} as const;
+
 export type VoidingEventStream =
   | (typeof VoidingEventStream)[keyof typeof VoidingEventStream]
   | null;
@@ -59,35 +80,19 @@ export const VoidingEventStream = {
 export interface VoidingEvent {
   id: number;
   voidedAt: string;
-  /**
-   * Volume voided in milliliters
-   * @minimum 0
-   */
+  /** @minimum 0 */
   volumeMl: number;
-  /** Maximum urine flow rate in ml/s (one decimal place) */
   qmax?: number | null;
-  /**
-   * Total time to fully void in seconds
-   * @minimum 0
-   */
+  /** @minimum 0 */
   durationSeconds?: number | null;
-  /** Color of the urine */
   urineColor: VoidingEventUrineColor;
-  /** Whether the urine appears cloudy (false = clear) */
   cloudy: boolean;
-  /** Whether blood was visible in the urine */
-  bloodPresent: boolean;
-  /** Urgency level felt before voiding */
+  appearanceTags?: VoidingEventAppearanceTagsItem[] | null;
+  hematuria: VoidingEventHematuria;
   urgency?: VoidingEventUrgency;
-  /**
-   * Pain level on a scale of 0-10
-   * @minimum 0
-   * @maximum 10
-   */
-  painLevel?: number | null;
-  /** Urine stream quality */
+  painLocations?: VoidingEventPainLocationsItem[] | null;
   stream?: VoidingEventStream;
-  /** Additional notes */
+  isNocturia: boolean;
   notes?: string | null;
   createdAt: string;
 }
@@ -96,11 +101,30 @@ export type CreateVoidingEventUrineColor =
   (typeof CreateVoidingEventUrineColor)[keyof typeof CreateVoidingEventUrineColor];
 
 export const CreateVoidingEventUrineColor = {
-  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
   orange: "orange",
+  dark_orange: "dark_orange",
+} as const;
+
+export type CreateVoidingEventAppearanceTagsItem =
+  (typeof CreateVoidingEventAppearanceTagsItem)[keyof typeof CreateVoidingEventAppearanceTagsItem];
+
+export const CreateVoidingEventAppearanceTagsItem = {
+  clots: "clots",
+  flakes: "flakes",
+  specks: "specks",
+} as const;
+
+export type CreateVoidingEventHematuria =
+  (typeof CreateVoidingEventHematuria)[keyof typeof CreateVoidingEventHematuria];
+
+export const CreateVoidingEventHematuria = {
+  none: "none",
+  visible_hematuria: "visible_hematuria",
+  post_drops: "post_drops",
+  post_pink: "post_pink",
 } as const;
 
 export type CreateVoidingEventUrgency =
@@ -109,9 +133,20 @@ export type CreateVoidingEventUrgency =
 
 export const CreateVoidingEventUrgency = {
   none: "none",
-  mild: "mild",
-  moderate: "moderate",
-  severe: "severe",
+  awareness: "awareness",
+  urgent: "urgent",
+  highly_urgent: "highly_urgent",
+  sudden_onset: "sudden_onset",
+} as const;
+
+export type CreateVoidingEventPainLocationsItem =
+  (typeof CreateVoidingEventPainLocationsItem)[keyof typeof CreateVoidingEventPainLocationsItem];
+
+export const CreateVoidingEventPainLocationsItem = {
+  spasm: "spasm",
+  perineum: "perineum",
+  shaft: "shaft",
+  tip: "tip",
 } as const;
 
 export type CreateVoidingEventStream =
@@ -130,21 +165,56 @@ export interface CreateVoidingEvent {
   voidedAt: string;
   /** @minimum 0 */
   volumeMl: number;
-  /** Maximum urine flow rate in ml/s (one decimal place) */
   qmax?: number | null;
   /** @minimum 0 */
   durationSeconds?: number | null;
   urineColor: CreateVoidingEventUrineColor;
   cloudy: boolean;
-  bloodPresent: boolean;
+  appearanceTags?: CreateVoidingEventAppearanceTagsItem[] | null;
+  hematuria: CreateVoidingEventHematuria;
   urgency?: CreateVoidingEventUrgency;
-  /**
-   * @minimum 0
-   * @maximum 10
-   */
-  painLevel?: number | null;
+  painLocations?: CreateVoidingEventPainLocationsItem[] | null;
   stream?: CreateVoidingEventStream;
+  isNocturia: boolean;
   notes?: string | null;
+}
+
+export type FluidIntakeEventDrinkTypesItem =
+  (typeof FluidIntakeEventDrinkTypesItem)[keyof typeof FluidIntakeEventDrinkTypesItem];
+
+export const FluidIntakeEventDrinkTypesItem = {
+  caffeine: "caffeine",
+  fizzy: "fizzy",
+  acidic: "acidic",
+  alcohol: "alcohol",
+  neutral: "neutral",
+} as const;
+
+export interface FluidIntakeEvent {
+  id: number;
+  recordedAt: string;
+  /** @minimum 0 */
+  volumeMl: number;
+  drinkTypes?: FluidIntakeEventDrinkTypesItem[] | null;
+  createdAt: string;
+}
+
+export type CreateFluidIntakeEventDrinkTypesItem =
+  (typeof CreateFluidIntakeEventDrinkTypesItem)[keyof typeof CreateFluidIntakeEventDrinkTypesItem];
+
+export const CreateFluidIntakeEventDrinkTypesItem = {
+  caffeine: "caffeine",
+  fizzy: "fizzy",
+  acidic: "acidic",
+  alcohol: "alcohol",
+  neutral: "neutral",
+} as const;
+
+export interface CreateFluidIntakeEvent {
+  recordedAt: string;
+  /** @minimum 0 */
+  volumeMl: number;
+  drinkTypes?: CreateFluidIntakeEventDrinkTypesItem[] | null;
 }
 
 export interface StatsPeriod {
@@ -159,4 +229,34 @@ export interface VoidingStats {
   last7Days: StatsPeriod;
   last30Days: StatsPeriod;
   totalRecords: number;
+}
+
+export interface FluidBalancePoint {
+  date: string;
+  cumulativeIntakeMl: number;
+  cumulativeVoidedMl: number;
+  netBalanceMl: number;
+}
+
+export interface NocturiaNight {
+  date: string;
+  count: number;
+}
+
+export interface NocturiaStats {
+  totalEvents: number;
+  avgPerNight: number;
+  nights: NocturiaNight[];
+}
+
+export interface UrgencyVsVolume {
+  urgency: string;
+  avgVolumeMl: number;
+  count: number;
+}
+
+export interface ReportData {
+  fluidBalance: FluidBalancePoint[];
+  nocturia: NocturiaStats;
+  urgencyVsVolume: UrgencyVsVolume[];
 }

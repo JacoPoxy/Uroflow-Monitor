@@ -3,12 +3,11 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -16,105 +15,81 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Returns all voiding events sorted by newest first
- * @summary List voiding events
+ * @summary List voiding events newest first
  */
 export const listVoidingsResponseVolumeMlMin = 0;
 
 export const listVoidingsResponseDurationSecondsMin = 0;
 
-export const listVoidingsResponsePainLevelMin = 0;
-export const listVoidingsResponsePainLevelMax = 10;
-
 export const ListVoidingsResponseItem = zod.object({
   id: zod.number(),
   voidedAt: zod.date(),
-  volumeMl: zod
-    .number()
-    .min(listVoidingsResponseVolumeMlMin)
-    .describe("Volume voided in milliliters"),
-  qmax: zod
-    .number()
-    .nullish()
-    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
+  volumeMl: zod.number().min(listVoidingsResponseVolumeMlMin),
+  qmax: zod.number().nullish(),
   durationSeconds: zod
     .number()
     .min(listVoidingsResponseDurationSecondsMin)
-    .nullish()
-    .describe("Total time to fully void in seconds"),
-  urineColor: zod
-    .enum(["clear", "pale_yellow", "yellow", "dark_yellow", "orange"])
-    .describe("Color of the urine"),
-  cloudy: zod
-    .boolean()
-    .describe("Whether the urine appears cloudy (false = clear)"),
-  bloodPresent: zod
-    .boolean()
-    .describe("Whether blood was visible in the urine"),
+    .nullish(),
+  urineColor: zod.enum([
+    "pale_yellow",
+    "yellow",
+    "dark_yellow",
+    "orange",
+    "dark_orange",
+  ]),
+  cloudy: zod.boolean(),
+  appearanceTags: zod.array(zod.enum(["clots", "flakes", "specks"])).nullish(),
+  hematuria: zod.enum(["none", "visible_hematuria", "post_drops", "post_pink"]),
   urgency: zod
-    .enum(["none", "mild", "moderate", "severe"])
-    .nullish()
-    .describe("Urgency level felt before voiding"),
-  painLevel: zod
-    .number()
-    .min(listVoidingsResponsePainLevelMin)
-    .max(listVoidingsResponsePainLevelMax)
-    .nullish()
-    .describe("Pain level on a scale of 0-10"),
+    .enum(["none", "awareness", "urgent", "highly_urgent", "sudden_onset"])
+    .nullish(),
+  painLocations: zod
+    .array(zod.enum(["spasm", "perineum", "shaft", "tip"]))
+    .nullish(),
   stream: zod
     .enum(["strong", "normal", "weak", "intermittent", "dribbling"])
-    .nullish()
-    .describe("Urine stream quality"),
-  notes: zod.string().nullish().describe("Additional notes"),
+    .nullish(),
+  isNocturia: zod.boolean(),
+  notes: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const ListVoidingsResponse = zod.array(ListVoidingsResponseItem);
 
-/**
- * @summary Create a voiding event
- */
 export const createVoidingBodyVolumeMlMin = 0;
 
 export const createVoidingBodyDurationSecondsMin = 0;
 
-export const createVoidingBodyPainLevelMin = 0;
-export const createVoidingBodyPainLevelMax = 10;
-
 export const CreateVoidingBody = zod.object({
   voidedAt: zod.date(),
   volumeMl: zod.number().min(createVoidingBodyVolumeMlMin),
-  qmax: zod
-    .number()
-    .nullish()
-    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
+  qmax: zod.number().nullish(),
   durationSeconds: zod
     .number()
     .min(createVoidingBodyDurationSecondsMin)
     .nullish(),
   urineColor: zod.enum([
-    "clear",
     "pale_yellow",
     "yellow",
     "dark_yellow",
     "orange",
+    "dark_orange",
   ]),
   cloudy: zod.boolean(),
-  bloodPresent: zod.boolean(),
-  urgency: zod.enum(["none", "mild", "moderate", "severe"]).nullish(),
-  painLevel: zod
-    .number()
-    .min(createVoidingBodyPainLevelMin)
-    .max(createVoidingBodyPainLevelMax)
+  appearanceTags: zod.array(zod.enum(["clots", "flakes", "specks"])).nullish(),
+  hematuria: zod.enum(["none", "visible_hematuria", "post_drops", "post_pink"]),
+  urgency: zod
+    .enum(["none", "awareness", "urgent", "highly_urgent", "sudden_onset"])
+    .nullish(),
+  painLocations: zod
+    .array(zod.enum(["spasm", "perineum", "shaft", "tip"]))
     .nullish(),
   stream: zod
     .enum(["strong", "normal", "weak", "intermittent", "dribbling"])
     .nullish(),
+  isNocturia: zod.boolean(),
   notes: zod.string().nullish(),
 });
 
-/**
- * @summary Get a voiding event
- */
 export const GetVoidingParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -123,62 +98,45 @@ export const getVoidingResponseVolumeMlMin = 0;
 
 export const getVoidingResponseDurationSecondsMin = 0;
 
-export const getVoidingResponsePainLevelMin = 0;
-export const getVoidingResponsePainLevelMax = 10;
-
 export const GetVoidingResponse = zod.object({
   id: zod.number(),
   voidedAt: zod.date(),
-  volumeMl: zod
-    .number()
-    .min(getVoidingResponseVolumeMlMin)
-    .describe("Volume voided in milliliters"),
-  qmax: zod
-    .number()
-    .nullish()
-    .describe("Maximum urine flow rate in ml\/s (one decimal place)"),
+  volumeMl: zod.number().min(getVoidingResponseVolumeMlMin),
+  qmax: zod.number().nullish(),
   durationSeconds: zod
     .number()
     .min(getVoidingResponseDurationSecondsMin)
-    .nullish()
-    .describe("Total time to fully void in seconds"),
-  urineColor: zod
-    .enum(["clear", "pale_yellow", "yellow", "dark_yellow", "orange"])
-    .describe("Color of the urine"),
-  cloudy: zod
-    .boolean()
-    .describe("Whether the urine appears cloudy (false = clear)"),
-  bloodPresent: zod
-    .boolean()
-    .describe("Whether blood was visible in the urine"),
+    .nullish(),
+  urineColor: zod.enum([
+    "pale_yellow",
+    "yellow",
+    "dark_yellow",
+    "orange",
+    "dark_orange",
+  ]),
+  cloudy: zod.boolean(),
+  appearanceTags: zod.array(zod.enum(["clots", "flakes", "specks"])).nullish(),
+  hematuria: zod.enum(["none", "visible_hematuria", "post_drops", "post_pink"]),
   urgency: zod
-    .enum(["none", "mild", "moderate", "severe"])
-    .nullish()
-    .describe("Urgency level felt before voiding"),
-  painLevel: zod
-    .number()
-    .min(getVoidingResponsePainLevelMin)
-    .max(getVoidingResponsePainLevelMax)
-    .nullish()
-    .describe("Pain level on a scale of 0-10"),
+    .enum(["none", "awareness", "urgent", "highly_urgent", "sudden_onset"])
+    .nullish(),
+  painLocations: zod
+    .array(zod.enum(["spasm", "perineum", "shaft", "tip"]))
+    .nullish(),
   stream: zod
     .enum(["strong", "normal", "weak", "intermittent", "dribbling"])
-    .nullish()
-    .describe("Urine stream quality"),
-  notes: zod.string().nullish().describe("Additional notes"),
+    .nullish(),
+  isNocturia: zod.boolean(),
+  notes: zod.string().nullish(),
   createdAt: zod.date(),
 });
 
-/**
- * @summary Delete a voiding event
- */
 export const DeleteVoidingParams = zod.object({
   id: zod.coerce.number(),
 });
 
 /**
- * Returns aggregated statistics for the last 7 days and 30 days
- * @summary Get voiding statistics summary
+ * @summary Aggregated voiding statistics
  */
 export const GetVoidingStatsResponse = zod.object({
   last7Days: zod.object({
@@ -196,4 +154,65 @@ export const GetVoidingStatsResponse = zod.object({
     avgDurationSeconds: zod.number().nullable(),
   }),
   totalRecords: zod.number(),
+});
+
+/**
+ * @summary List fluid intake events newest first
+ */
+export const listFluidIntakeResponseVolumeMlMin = 0;
+
+export const ListFluidIntakeResponseItem = zod.object({
+  id: zod.number(),
+  recordedAt: zod.date(),
+  volumeMl: zod.number().min(listFluidIntakeResponseVolumeMlMin),
+  drinkTypes: zod
+    .array(zod.enum(["caffeine", "fizzy", "acidic", "alcohol", "neutral"]))
+    .nullish(),
+  createdAt: zod.date(),
+});
+export const ListFluidIntakeResponse = zod.array(ListFluidIntakeResponseItem);
+
+export const createFluidIntakeBodyVolumeMlMin = 0;
+
+export const CreateFluidIntakeBody = zod.object({
+  recordedAt: zod.date(),
+  volumeMl: zod.number().min(createFluidIntakeBodyVolumeMlMin),
+  drinkTypes: zod
+    .array(zod.enum(["caffeine", "fizzy", "acidic", "alcohol", "neutral"]))
+    .nullish(),
+});
+
+export const DeleteFluidIntakeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get full analytics report
+ */
+export const GetReportResponse = zod.object({
+  fluidBalance: zod.array(
+    zod.object({
+      date: zod.string(),
+      cumulativeIntakeMl: zod.number(),
+      cumulativeVoidedMl: zod.number(),
+      netBalanceMl: zod.number(),
+    }),
+  ),
+  nocturia: zod.object({
+    totalEvents: zod.number(),
+    avgPerNight: zod.number(),
+    nights: zod.array(
+      zod.object({
+        date: zod.string(),
+        count: zod.number(),
+      }),
+    ),
+  }),
+  urgencyVsVolume: zod.array(
+    zod.object({
+      urgency: zod.string(),
+      avgVolumeMl: zod.number(),
+      count: zod.number(),
+    }),
+  ),
 });

@@ -3,19 +3,16 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
-/**
- * Color of the urine
- */
 export type VoidingEventUrineColor =
   (typeof VoidingEventUrineColor)[keyof typeof VoidingEventUrineColor];
 
 export const VoidingEventUrineColor = {
-  clear: "clear",
   pale_yellow: "pale_yellow",
   yellow: "yellow",
   dark_yellow: "dark_yellow",
   orange: "orange",
+  dark_orange: "dark_orange",
 } as const;

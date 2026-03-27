@@ -3,8 +3,11 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
+import type { VoidingEventAppearanceTagsItem } from "./voidingEventAppearanceTagsItem";
+import type { VoidingEventHematuria } from "./voidingEventHematuria";
+import type { VoidingEventPainLocationsItem } from "./voidingEventPainLocationsItem";
 import type { VoidingEventStream } from "./voidingEventStream";
 import type { VoidingEventUrgency } from "./voidingEventUrgency";
 import type { VoidingEventUrineColor } from "./voidingEventUrineColor";
@@ -12,35 +15,19 @@ import type { VoidingEventUrineColor } from "./voidingEventUrineColor";
 export interface VoidingEvent {
   id: number;
   voidedAt: Date;
-  /**
-   * Volume voided in milliliters
-   * @minimum 0
-   */
+  /** @minimum 0 */
   volumeMl: number;
-  /** Maximum urine flow rate in ml/s (one decimal place) */
   qmax?: number | null;
-  /**
-   * Total time to fully void in seconds
-   * @minimum 0
-   */
+  /** @minimum 0 */
   durationSeconds?: number | null;
-  /** Color of the urine */
   urineColor: VoidingEventUrineColor;
-  /** Whether the urine appears cloudy (false = clear) */
   cloudy: boolean;
-  /** Whether blood was visible in the urine */
-  bloodPresent: boolean;
-  /** Urgency level felt before voiding */
+  appearanceTags?: VoidingEventAppearanceTagsItem[] | null;
+  hematuria: VoidingEventHematuria;
   urgency?: VoidingEventUrgency;
-  /**
-   * Pain level on a scale of 0-10
-   * @minimum 0
-   * @maximum 10
-   */
-  painLevel?: number | null;
-  /** Urine stream quality */
+  painLocations?: VoidingEventPainLocationsItem[] | null;
   stream?: VoidingEventStream;
-  /** Additional notes */
+  isNocturia: boolean;
   notes?: string | null;
   createdAt: Date;
 }

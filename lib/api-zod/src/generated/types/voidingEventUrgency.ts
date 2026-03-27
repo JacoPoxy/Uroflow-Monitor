@@ -3,19 +3,17 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
-/**
- * Urgency level felt before voiding
- */
 export type VoidingEventUrgency =
   | (typeof VoidingEventUrgency)[keyof typeof VoidingEventUrgency]
   | null;
 
 export const VoidingEventUrgency = {
   none: "none",
-  mild: "mild",
-  moderate: "moderate",
-  severe: "severe",
+  awareness: "awareness",
+  urgent: "urgent",
+  highly_urgent: "highly_urgent",
+  sudden_onset: "sudden_onset",
 } as const;

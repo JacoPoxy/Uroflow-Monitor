@@ -1,18 +1,22 @@
-import { useGetVoidingStats, useListVoidings, getListVoidingsQueryKey, getGetVoidingStatsQueryKey } from "@workspace/api-client-react";
+import { useGetVoidingStats, useListVoidings } from "@workspace/api-client-react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Droplet, Clock, AlertCircle, Calendar } from "lucide-react";
 import { formatClinicalDateTime } from "@/lib/utils";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
-import { format, parseISO, subDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Link } from "wouter";
+
+const COLOR_HEX: Record<string, string> = {
+  pale_yellow: "#FEFCE8", yellow: "#FEF08A", dark_yellow: "#FCD34D",
+  orange: "#FB923C", dark_orange: "#C2410C",
+};
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetVoidingStats();
   const { data: voidings, isLoading: listLoading } = useListVoidings();
 
-  // Prepare chart data from recent voidings
   const chartData = voidings?.slice(0, 14).reverse().map(v => ({
     time: format(parseISO(v.voidedAt), "MMM d, HH:mm"),
     volume: v.volumeMl,
@@ -30,21 +34,15 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
             <CardContent className="p-5 flex flex-col items-center text-center justify-center h-full">
-              <div className="bg-blue-100 p-3 rounded-full mb-3 text-blue-600">
-                <Activity className="w-6 h-6" />
-              </div>
+              <div className="bg-blue-100 p-3 rounded-full mb-3 text-blue-600"><Activity className="w-6 h-6" /></div>
               <p className="text-sm font-medium text-slate-500 mb-1">7-Day Events</p>
-              <h3 className="text-3xl font-display font-bold text-slate-800">
-                {statsLoading ? "-" : stats?.last7Days.count || 0}
-              </h3>
+              <h3 className="text-3xl font-display font-bold text-slate-800">{statsLoading ? "-" : stats?.last7Days.count || 0}</h3>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-sky-50 to-white border-sky-100">
             <CardContent className="p-5 flex flex-col items-center text-center justify-center h-full">
-              <div className="bg-sky-100 p-3 rounded-full mb-3 text-sky-600">
-                <Droplet className="w-6 h-6" />
-              </div>
+              <div className="bg-sky-100 p-3 rounded-full mb-3 text-sky-600"><Droplet className="w-6 h-6" /></div>
               <p className="text-sm font-medium text-slate-500 mb-1">Avg Volume (7d)</p>
               <h3 className="text-3xl font-display font-bold text-slate-800 flex items-baseline gap-1">
                 {statsLoading ? "-" : Math.round(stats?.last7Days.avgVolumeMl || 0)}
@@ -55,9 +53,7 @@ export default function Dashboard() {
 
           <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
             <CardContent className="p-5 flex flex-col items-center text-center justify-center h-full">
-              <div className="bg-indigo-100 p-3 rounded-full mb-3 text-indigo-600">
-                <Clock className="w-6 h-6" />
-              </div>
+              <div className="bg-indigo-100 p-3 rounded-full mb-3 text-indigo-600"><Clock className="w-6 h-6" /></div>
               <p className="text-sm font-medium text-slate-500 mb-1">Avg Duration (7d)</p>
               <h3 className="text-3xl font-display font-bold text-slate-800 flex items-baseline gap-1">
                 {statsLoading ? "-" : Math.round(stats?.last7Days.avgDurationSeconds || 0)}
@@ -71,15 +67,13 @@ export default function Dashboard() {
               <div className={stats?.last7Days.bloodIncidents ? "bg-red-100 p-3 rounded-full mb-3 text-red-600 animate-pulse" : "bg-slate-200 p-3 rounded-full mb-3 text-slate-500"}>
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Blood Events (7d)</p>
-              <h3 className="text-3xl font-display font-bold text-slate-800">
-                {statsLoading ? "-" : stats?.last7Days.bloodIncidents || 0}
-              </h3>
+              <p className="text-sm font-medium text-slate-500 mb-1">Hematuria (7d)</p>
+              <h3 className="text-3xl font-display font-bold text-slate-800">{statsLoading ? "-" : stats?.last7Days.bloodIncidents || 0}</h3>
             </CardContent>
           </Card>
         </div>
 
-        {/* Chart Section */}
+        {/* Chart */}
         <Card className="overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-border/50">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -89,7 +83,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-0">
             {chartData.length > 0 ? (
-              <div className="h-[300px] w-full pt-6 pr-6 pb-2">
+              <div className="h-[280px] w-full pt-6 pr-6 pb-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
@@ -99,99 +93,63 @@ export default function Dashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="time" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      dx={-10}
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)' }}
-                      labelStyle={{ fontWeight: 'bold', color: 'hsl(var(--foreground))', marginBottom: '4px' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="volume" 
-                      name="Volume (ml)"
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorVolume)" 
-                      activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(var(--primary))' }}
-                    />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} dx={-10} />
+                    <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }} />
+                    <Area type="monotone" dataKey="volume" name="Volume (ml)" stroke="hsl(var(--primary))" strokeWidth={3}
+                      fillOpacity={1} fill="url(#colorVolume)" activeDot={{ r: 6, strokeWidth: 0 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-[300px] flex flex-col items-center justify-center text-slate-400 gap-4">
-                {/* empty state clipboard illustration */}
-                <img 
-                  src={`${import.meta.env.BASE_URL}images/empty-state-clipboard.png`}
-                  alt="No data"
-                  className="w-32 h-32 opacity-50 drop-shadow-md grayscale"
-                />
+              <div className="h-[280px] flex flex-col items-center justify-center text-slate-400 gap-4">
+                <img src={`${import.meta.env.BASE_URL}images/empty-state-clipboard.png`} alt="No data" className="w-28 h-28 opacity-40 grayscale" />
                 <p>Not enough data to display chart.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Recent Entries preview */}
+        {/* Recent entries */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-display font-bold text-slate-800 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-slate-400" />
-              Recent Entries
+              <Calendar className="w-5 h-5 text-slate-400" />Recent Entries
             </h3>
-            <Link href="/history" className="text-sm font-semibold text-primary hover:underline">
-              View All
-            </Link>
+            <Link href="/history" className="text-sm font-semibold text-primary hover:underline">View All</Link>
           </div>
-          
+
           <div className="grid gap-3">
-            {listLoading ? (
-              <div className="h-24 bg-slate-100 rounded-2xl animate-pulse"></div>
-            ) : voidings?.slice(0, 3).map((item) => (
-              <Card key={item.id} className="group">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-slate-50 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                      <span className="text-sm font-bold leading-none">{item.volumeMl}</span>
-                      <span className="text-[10px] font-medium opacity-80">ml</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-800">
-                        {formatClinicalDateTime(item.voidedAt)}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px] capitalize bg-slate-50">
-                          {item.urineColor.replace('_', ' ')}
-                        </Badge>
-                        {item.bloodPresent && (
-                          <Badge variant="destructive" className="text-[10px] uppercase tracking-wider font-bold">
-                            Blood
+            {listLoading ? <div className="h-24 bg-slate-100 rounded-2xl animate-pulse" /> :
+              voidings?.slice(0, 3).map(item => (
+                <Card key={item.id} className="group">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full border-2 border-white shadow-md flex flex-col items-center justify-center"
+                        style={{ backgroundColor: COLOR_HEX[item.urineColor] ?? "#FEF08A" }}>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-800 text-sm">{formatClinicalDateTime(item.voidedAt)}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs font-bold text-primary">{item.volumeMl} ml</span>
+                          <Badge variant="outline" className="text-[10px] capitalize bg-slate-50">
+                            {item.urineColor.replace(/_/g, " ")}
                           </Badge>
-                        )}
+                          {item.hematuria !== "none" && (
+                            <Badge variant="destructive" className="text-[10px] uppercase font-bold">Blood</Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {item.durationSeconds && (
-                    <div className="text-right hidden sm:block">
-                      <p className="text-sm font-medium text-slate-600">{item.durationSeconds} sec</p>
-                      <p className="text-xs text-slate-400">Duration</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    {item.durationSeconds && (
+                      <div className="text-right hidden sm:block">
+                        <p className="text-sm font-medium text-slate-600">{item.durationSeconds}s</p>
+                        <p className="text-xs text-slate-400">Duration</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             {voidings?.length === 0 && (
               <div className="text-center p-8 border-2 border-dashed border-border rounded-2xl text-slate-500">
                 No voiding events recorded yet.
@@ -199,7 +157,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-
       </div>
     </Layout>
   );

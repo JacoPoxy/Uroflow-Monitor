@@ -3,8 +3,11 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
+import type { CreateVoidingEventAppearanceTagsItem } from "./createVoidingEventAppearanceTagsItem";
+import type { CreateVoidingEventHematuria } from "./createVoidingEventHematuria";
+import type { CreateVoidingEventPainLocationsItem } from "./createVoidingEventPainLocationsItem";
 import type { CreateVoidingEventStream } from "./createVoidingEventStream";
 import type { CreateVoidingEventUrgency } from "./createVoidingEventUrgency";
 import type { CreateVoidingEventUrineColor } from "./createVoidingEventUrineColor";
@@ -13,19 +16,16 @@ export interface CreateVoidingEvent {
   voidedAt: Date;
   /** @minimum 0 */
   volumeMl: number;
-  /** Maximum urine flow rate in ml/s (one decimal place) */
   qmax?: number | null;
   /** @minimum 0 */
   durationSeconds?: number | null;
   urineColor: CreateVoidingEventUrineColor;
   cloudy: boolean;
-  bloodPresent: boolean;
+  appearanceTags?: CreateVoidingEventAppearanceTagsItem[] | null;
+  hematuria: CreateVoidingEventHematuria;
   urgency?: CreateVoidingEventUrgency;
-  /**
-   * @minimum 0
-   * @maximum 10
-   */
-  painLevel?: number | null;
+  painLocations?: CreateVoidingEventPainLocationsItem[] | null;
   stream?: CreateVoidingEventStream;
+  isNocturia: boolean;
   notes?: string | null;
 }

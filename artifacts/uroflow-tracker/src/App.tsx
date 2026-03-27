@@ -6,14 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/Dashboard";
 import History from "@/pages/History";
 import LogEntry from "@/pages/LogEntry";
+import Report from "@/pages/Report";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-    },
+    queries: { refetchOnWindowFocus: false, retry: false },
   },
 });
 
@@ -23,6 +21,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/history" component={History} />
       <Route path="/log" component={LogEntry} />
+      <Route path="/report" component={Report} />
       <Route component={NotFound} />
     </Switch>
   );

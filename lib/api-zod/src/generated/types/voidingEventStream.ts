@@ -3,12 +3,9 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
-/**
- * Urine stream quality
- */
 export type VoidingEventStream =
   | (typeof VoidingEventStream)[keyof typeof VoidingEventStream]
   | null;

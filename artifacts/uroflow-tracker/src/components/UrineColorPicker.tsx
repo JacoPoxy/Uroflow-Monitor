@@ -7,12 +7,12 @@ interface UrineColorPickerProps {
   error?: boolean;
 }
 
-const colorOptions: { key: string; hex: string; label: string; border?: string }[] = [
-  { key: "clear",       hex: "#F0F9FF", label: "Clear",      border: "#BAE6FD" },
+const colorOptions: { key: string; hex: string; label: string; border: string }[] = [
   { key: "pale_yellow", hex: "#FEFCE8", label: "Pale Yellow", border: "#FDE68A" },
-  { key: "yellow",      hex: "#FEF08A", label: "Yellow",     border: "#EAB308" },
+  { key: "yellow",      hex: "#FEF08A", label: "Yellow",      border: "#EAB308" },
   { key: "dark_yellow", hex: "#FCD34D", label: "Dark Yellow", border: "#D97706" },
-  { key: "orange",      hex: "#FB923C", label: "Orange",     border: "#EA580C" },
+  { key: "orange",      hex: "#FB923C", label: "Orange",      border: "#EA580C" },
+  { key: "dark_orange", hex: "#C2410C", label: "Dark Orange", border: "#7C2D12" },
 ];
 
 export function UrineColorPicker({ value, onChange, error }: UrineColorPickerProps) {
@@ -32,22 +32,12 @@ export function UrineColorPicker({ value, onChange, error }: UrineColorPickerPro
           >
             <div
               className={cn(
-                "w-full aspect-square rounded-xl border-2 transition-all duration-200 relative",
-                isSelected
-                  ? "scale-105 shadow-md ring-2 ring-offset-2 ring-primary"
-                  : "hover:scale-103 hover:shadow-sm",
+                "w-full aspect-square rounded-xl border-2 transition-all duration-200",
+                isSelected ? "scale-105 shadow-md ring-2 ring-offset-2 ring-primary" : "hover:scale-103 hover:shadow-sm",
               )}
-              style={{
-                backgroundColor: hex,
-                borderColor: isSelected ? "var(--color-primary, #3B82F6)" : (border ?? "#E5E7EB"),
-              }}
+              style={{ backgroundColor: hex, borderColor: isSelected ? "var(--color-primary, #3B82F6)" : border }}
             />
-            <span
-              className={cn(
-                "text-[10px] font-medium text-center leading-tight transition-colors",
-                isSelected ? "text-primary font-bold" : "text-slate-500",
-              )}
-            >
+            <span className={cn("text-[10px] font-medium text-center leading-tight transition-colors", isSelected ? "text-primary font-bold" : "text-slate-500")}>
               {label}
             </span>
           </button>

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Uroflow Tracker API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -17,9 +17,12 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CreateFluidIntakeEvent,
   CreateVoidingEvent,
   ErrorResponse,
+  FluidIntakeEvent,
   HealthStatus,
+  ReportData,
   VoidingEvent,
   VoidingStats,
 } from "./api.schemas";
@@ -34,7 +37,6 @@ type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
@@ -110,8 +112,7 @@ export function useHealthCheck<
 }
 
 /**
- * Returns all voiding events sorted by newest first
- * @summary List voiding events
+ * @summary List voiding events newest first
  */
 export const getListVoidingsUrl = () => {
   return `/api/voidings`;
@@ -162,7 +163,7 @@ export type ListVoidingsQueryResult = NonNullable<
 export type ListVoidingsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List voiding events
+ * @summary List voiding events newest first
  */
 
 export function useListVoidings<
@@ -185,9 +186,6 @@ export function useListVoidings<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-/**
- * @summary Create a voiding event
- */
 export const getCreateVoidingUrl = () => {
   return `/api/voidings`;
 };
@@ -248,9 +246,6 @@ export type CreateVoidingMutationResult = NonNullable<
 export type CreateVoidingMutationBody = BodyType<CreateVoidingEvent>;
 export type CreateVoidingMutationError = ErrorType<ErrorResponse>;
 
-/**
- * @summary Create a voiding event
- */
 export const useCreateVoiding = <
   TError = ErrorType<ErrorResponse>,
   TContext = unknown,
@@ -271,9 +266,6 @@ export const useCreateVoiding = <
   return useMutation(getCreateVoidingMutationOptions(options));
 };
 
-/**
- * @summary Get a voiding event
- */
 export const getGetVoidingUrl = (id: number) => {
   return `/api/voidings/${id}`;
 };
@@ -331,10 +323,6 @@ export type GetVoidingQueryResult = NonNullable<
 >;
 export type GetVoidingQueryError = ErrorType<ErrorResponse>;
 
-/**
- * @summary Get a voiding event
- */
-
 export function useGetVoiding<
   TData = Awaited<ReturnType<typeof getVoiding>>,
   TError = ErrorType<ErrorResponse>,
@@ -358,9 +346,6 @@ export function useGetVoiding<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-/**
- * @summary Delete a voiding event
- */
 export const getDeleteVoidingUrl = (id: number) => {
   return `/api/voidings/${id}`;
 };
@@ -419,9 +404,6 @@ export type DeleteVoidingMutationResult = NonNullable<
 
 export type DeleteVoidingMutationError = ErrorType<ErrorResponse>;
 
-/**
- * @summary Delete a voiding event
- */
 export const useDeleteVoiding = <
   TError = ErrorType<ErrorResponse>,
   TContext = unknown,
@@ -443,8 +425,7 @@ export const useDeleteVoiding = <
 };
 
 /**
- * Returns aggregated statistics for the last 7 days and 30 days
- * @summary Get voiding statistics summary
+ * @summary Aggregated voiding statistics
  */
 export const getGetVoidingStatsUrl = () => {
   return `/api/voidings/stats/summary`;
@@ -495,7 +476,7 @@ export type GetVoidingStatsQueryResult = NonNullable<
 export type GetVoidingStatsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get voiding statistics summary
+ * @summary Aggregated voiding statistics
  */
 
 export function useGetVoidingStats<
@@ -510,6 +491,304 @@ export function useGetVoidingStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetVoidingStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List fluid intake events newest first
+ */
+export const getListFluidIntakeUrl = () => {
+  return `/api/fluid-intake`;
+};
+
+export const listFluidIntake = async (
+  options?: RequestInit,
+): Promise<FluidIntakeEvent[]> => {
+  return customFetch<FluidIntakeEvent[]>(getListFluidIntakeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFluidIntakeQueryKey = () => {
+  return [`/api/fluid-intake`] as const;
+};
+
+export const getListFluidIntakeQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFluidIntake>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFluidIntake>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFluidIntakeQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listFluidIntake>>> = ({
+    signal,
+  }) => listFluidIntake({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFluidIntake>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFluidIntakeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFluidIntake>>
+>;
+export type ListFluidIntakeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List fluid intake events newest first
+ */
+
+export function useListFluidIntake<
+  TData = Awaited<ReturnType<typeof listFluidIntake>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFluidIntake>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFluidIntakeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateFluidIntakeUrl = () => {
+  return `/api/fluid-intake`;
+};
+
+export const createFluidIntake = async (
+  createFluidIntakeEvent: CreateFluidIntakeEvent,
+  options?: RequestInit,
+): Promise<FluidIntakeEvent> => {
+  return customFetch<FluidIntakeEvent>(getCreateFluidIntakeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createFluidIntakeEvent),
+  });
+};
+
+export const getCreateFluidIntakeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFluidIntake>>,
+    TError,
+    { data: BodyType<CreateFluidIntakeEvent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFluidIntake>>,
+  TError,
+  { data: BodyType<CreateFluidIntakeEvent> },
+  TContext
+> => {
+  const mutationKey = ["createFluidIntake"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFluidIntake>>,
+    { data: BodyType<CreateFluidIntakeEvent> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFluidIntake(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFluidIntakeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFluidIntake>>
+>;
+export type CreateFluidIntakeMutationBody = BodyType<CreateFluidIntakeEvent>;
+export type CreateFluidIntakeMutationError = ErrorType<ErrorResponse>;
+
+export const useCreateFluidIntake = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFluidIntake>>,
+    TError,
+    { data: BodyType<CreateFluidIntakeEvent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFluidIntake>>,
+  TError,
+  { data: BodyType<CreateFluidIntakeEvent> },
+  TContext
+> => {
+  return useMutation(getCreateFluidIntakeMutationOptions(options));
+};
+
+export const getDeleteFluidIntakeUrl = (id: number) => {
+  return `/api/fluid-intake/${id}`;
+};
+
+export const deleteFluidIntake = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteFluidIntakeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteFluidIntakeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFluidIntake>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFluidIntake>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteFluidIntake"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFluidIntake>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteFluidIntake(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFluidIntakeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFluidIntake>>
+>;
+
+export type DeleteFluidIntakeMutationError = ErrorType<ErrorResponse>;
+
+export const useDeleteFluidIntake = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFluidIntake>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFluidIntake>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteFluidIntakeMutationOptions(options));
+};
+
+/**
+ * @summary Get full analytics report
+ */
+export const getGetReportUrl = () => {
+  return `/api/report`;
+};
+
+export const getReport = async (options?: RequestInit): Promise<ReportData> => {
+  return customFetch<ReportData>(getGetReportUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportQueryKey = () => {
+  return [`/api/report`] as const;
+};
+
+export const getGetReportQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReport>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getReport>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReport>>> = ({
+    signal,
+  }) => getReport({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReport>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReport>>
+>;
+export type GetReportQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get full analytics report
+ */
+
+export function useGetReport<
+  TData = Awaited<ReturnType<typeof getReport>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getReport>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

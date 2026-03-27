@@ -1,10 +1,18 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, voidingsTable } from "@workspace/db";
-import { insertVoidingSchema } from "@workspace/db";
+import { db, voidingsTable, insertVoidingSchema } from "@workspace/db";
 import { CreateVoidingBody, GetVoidingParams, DeleteVoidingParams } from "@workspace/api-zod";
 import { eq, desc, gte, sql, count, avg, sum } from "drizzle-orm";
 
 const router: IRouter = Router();
+
+function serializeVoiding(v: typeof voidingsTable.$inferSelect) {
+  return {
+    ...v,
+    qmax: v.qmax != null ? parseFloat(String(v.qmax)) : null,
+    appearanceTags: v.appearanceTags ? JSON.parse(v.appearanceTags) : null,
+    painLocations: v.painLocations ? JSON.parse(v.painLocations) : null,
+  };
+}
 
 router.get("/stats/summary", async (req: Request, res: Response) => {
   try {
@@ -22,7 +30,7 @@ router.get("/stats/summary", async (req: Request, res: Response) => {
           avgVolumeMl: avg(voidingsTable.volumeMl),
           totalVolumeMl: sum(voidingsTable.volumeMl),
           avgDurationSeconds: avg(voidingsTable.durationSeconds),
-          bloodIncidents: sql<number>`SUM(CASE WHEN ${voidingsTable.bloodPresent} THEN 1 ELSE 0 END)::int`,
+          bloodIncidents: sql<number>`SUM(CASE WHEN ${voidingsTable.hematuria} != 'none' THEN 1 ELSE 0 END)::int`,
         })
         .from(voidingsTable)
         .where(gte(voidingsTable.voidedAt, since));
@@ -50,11 +58,8 @@ router.get("/stats/summary", async (req: Request, res: Response) => {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const voidings = await db
-      .select()
-      .from(voidingsTable)
-      .orderBy(desc(voidingsTable.voidedAt));
-    res.json(voidings);
+    const voidings = await db.select().from(voidingsTable).orderBy(desc(voidingsTable.voidedAt));
+    res.json(voidings.map(serializeVoiding));
   } catch (err) {
     req.log.error({ err }, "Failed to list voidings");
     res.status(500).json({ error: "Failed to fetch voiding records" });
@@ -68,11 +73,16 @@ router.post("/", async (req: Request, res: Response) => {
     return;
   }
 
+  const { appearanceTags, painLocations, qmax, ...rest } = bodyResult.data;
+
   const insertResult = insertVoidingSchema.safeParse({
-    ...bodyResult.data,
+    ...rest,
     voidedAt: new Date(bodyResult.data.voidedAt),
-    qmax: bodyResult.data.qmax != null ? String(bodyResult.data.qmax) : null,
+    qmax: qmax != null ? String(qmax) : null,
+    appearanceTags: appearanceTags ? JSON.stringify(appearanceTags) : null,
+    painLocations: painLocations ? JSON.stringify(painLocations) : null,
   });
+
   if (!insertResult.success) {
     res.status(400).json({ error: "Validation failed", details: insertResult.error.errors });
     return;
@@ -80,11 +90,7 @@ router.post("/", async (req: Request, res: Response) => {
 
   try {
     const [created] = await db.insert(voidingsTable).values(insertResult.data).returning();
-    // Convert qmax back to number for response
-    res.status(201).json({
-      ...created,
-      qmax: created.qmax != null ? parseFloat(String(created.qmax)) : null,
-    });
+    res.status(201).json(serializeVoiding(created));
   } catch (err) {
     req.log.error({ err }, "Failed to create voiding record");
     res.status(500).json({ error: "Failed to create voiding record" });
@@ -93,26 +99,12 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   const paramsResult = GetVoidingParams.safeParse({ id: Number(req.params.id) });
-  if (!paramsResult.success) {
-    res.status(400).json({ error: "Invalid ID" });
-    return;
-  }
+  if (!paramsResult.success) { res.status(400).json({ error: "Invalid ID" }); return; }
 
   try {
-    const [voiding] = await db
-      .select()
-      .from(voidingsTable)
-      .where(eq(voidingsTable.id, paramsResult.data.id));
-
-    if (!voiding) {
-      res.status(404).json({ error: "Voiding record not found" });
-      return;
-    }
-
-    res.json({
-      ...voiding,
-      qmax: voiding.qmax != null ? parseFloat(String(voiding.qmax)) : null,
-    });
+    const [voiding] = await db.select().from(voidingsTable).where(eq(voidingsTable.id, paramsResult.data.id));
+    if (!voiding) { res.status(404).json({ error: "Not found" }); return; }
+    res.json(serializeVoiding(voiding));
   } catch (err) {
     req.log.error({ err }, "Failed to get voiding");
     res.status(500).json({ error: "Failed to fetch voiding record" });
@@ -121,22 +113,11 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const paramsResult = DeleteVoidingParams.safeParse({ id: Number(req.params.id) });
-  if (!paramsResult.success) {
-    res.status(400).json({ error: "Invalid ID" });
-    return;
-  }
+  if (!paramsResult.success) { res.status(400).json({ error: "Invalid ID" }); return; }
 
   try {
-    const [deleted] = await db
-      .delete(voidingsTable)
-      .where(eq(voidingsTable.id, paramsResult.data.id))
-      .returning();
-
-    if (!deleted) {
-      res.status(404).json({ error: "Voiding record not found" });
-      return;
-    }
-
+    const [deleted] = await db.delete(voidingsTable).where(eq(voidingsTable.id, paramsResult.data.id)).returning();
+    if (!deleted) { res.status(404).json({ error: "Not found" }); return; }
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete voiding");
