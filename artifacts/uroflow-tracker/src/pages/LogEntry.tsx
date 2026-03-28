@@ -141,16 +141,15 @@ function SingleChip<T extends string>({
 function DurationStopwatch({
   value, onChange,
 }: { value: number | null; onChange: (v: number | null) => void }) {
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const start = () => {
     setElapsed(0);
-    setRunning(true);
-    intervalRef.current = setInterval(() => {
-      setElapsed(s => s + 1);
-    }, 1000);
+    onChange(null);
+    setCountdown(3);
   };
 
   const stop = () => {
@@ -162,14 +161,34 @@ function DurationStopwatch({
   const reset = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setRunning(false);
+    setCountdown(null);
     setElapsed(0);
     onChange(null);
   };
 
+  // Countdown tick
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      setRunning(true);
+      return;
+    }
+    const t = setTimeout(() => setCountdown(c => (c ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  // Stopwatch tick
+  useEffect(() => {
+    if (!running) return;
+    intervalRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [running]);
+
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
-  const displaySeconds = running ? elapsed : (value ?? 0);
-  const hasFinalValue = !running && value != null && value > 0;
+  const hasFinalValue = !running && countdown === null && value != null && value > 0;
+  const isCountingDown = countdown !== null;
 
   const handleManualInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseInt(e.target.value, 10);
@@ -179,54 +198,70 @@ function DurationStopwatch({
   return (
     <div className="space-y-1">
       <Label>Duration — Optional</Label>
-      <div className={cn(
-        "flex items-center gap-2 p-3 rounded-xl border-2 transition-all",
-        running ? "border-primary bg-primary/5" : hasFinalValue ? "border-green-300 bg-green-50" : "border-slate-200 bg-white"
-      )}>
-        <Timer className={cn("w-4 h-4 shrink-0", running ? "text-primary animate-pulse" : "text-slate-400")} />
 
-        {/* Elapsed display while running; editable number input when stopped */}
-        {running ? (
-          <span className="flex-1 text-2xl font-bold tabular-nums tracking-tight text-primary">
-            {elapsed}
+      {/* Countdown overlay */}
+      {isCountingDown && (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-amber-300 bg-amber-50">
+          <span className="text-6xl font-black tabular-nums text-amber-500 animate-bounce leading-none" key={countdown}>
+            {countdown}
           </span>
-        ) : (
-          <input
-            type="number"
-            min="0"
-            step="1"
-            placeholder="—"
-            value={value ?? ""}
-            onChange={handleManualInput}
-            className="flex-1 text-2xl font-bold tabular-nums bg-transparent outline-none w-0 min-w-0 text-slate-700 placeholder:text-slate-300"
-          />
-        )}
-
-        <span className={cn("text-sm font-medium shrink-0", running ? "text-primary/70" : "text-slate-400")}>sec</span>
-
-        {/* Controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {!running && (
-            <button type="button" onClick={start}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm shadow-primary/25">
-              <Timer className="w-3.5 h-3.5" /> {hasFinalValue ? "Retimer" : "Start"}
-            </button>
-          )}
-          {running && (
-            <button type="button" onClick={stop}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm shadow-red-200 animate-pulse">
-              <Square className="w-3.5 h-3.5 fill-white" /> Stop
-            </button>
-          )}
-          {(hasFinalValue || running) && (
-            <button type="button" onClick={reset}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
-              title="Reset">
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          )}
+          <p className="text-sm font-semibold text-amber-600">Get ready…</p>
+          <button type="button" onClick={reset}
+            className="mt-1 text-xs text-amber-400 hover:text-amber-600 underline">
+            Cancel
+          </button>
         </div>
-      </div>
+      )}
+
+      {/* Main input row (hidden during countdown) */}
+      {!isCountingDown && (
+        <div className={cn(
+          "flex items-center gap-2 p-3 rounded-xl border-2 transition-all",
+          running ? "border-primary bg-primary/5" : hasFinalValue ? "border-green-300 bg-green-50" : "border-slate-200 bg-white"
+        )}>
+          <Timer className={cn("w-4 h-4 shrink-0", running ? "text-primary animate-pulse" : "text-slate-400")} />
+
+          {running ? (
+            <span className="flex-1 text-2xl font-bold tabular-nums tracking-tight text-primary">
+              {elapsed}
+            </span>
+          ) : (
+            <input
+              type="number"
+              min="0"
+              step="1"
+              placeholder="—"
+              value={value ?? ""}
+              onChange={handleManualInput}
+              className="flex-1 text-2xl font-bold tabular-nums bg-transparent outline-none w-0 min-w-0 text-slate-700 placeholder:text-slate-300"
+            />
+          )}
+
+          <span className={cn("text-sm font-medium shrink-0", running ? "text-primary/70" : "text-slate-400")}>sec</span>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!running && (
+              <button type="button" onClick={start}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm shadow-primary/25">
+                <Timer className="w-3.5 h-3.5" /> {hasFinalValue ? "Retimer" : "Start"}
+              </button>
+            )}
+            {running && (
+              <button type="button" onClick={stop}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm shadow-red-200 animate-pulse">
+                <Square className="w-3.5 h-3.5 fill-white" /> Stop
+              </button>
+            )}
+            {(hasFinalValue || running) && (
+              <button type="button" onClick={reset}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                title="Reset">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
