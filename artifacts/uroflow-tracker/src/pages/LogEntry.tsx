@@ -171,6 +171,11 @@ function DurationStopwatch({
   const displaySeconds = running ? elapsed : (value ?? 0);
   const hasFinalValue = !running && value != null && value > 0;
 
+  const handleManualInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseInt(e.target.value, 10);
+    onChange(isNaN(v) || v < 0 ? null : v);
+  };
+
   return (
     <div className="space-y-1">
       <Label>Duration — Optional</Label>
@@ -178,42 +183,50 @@ function DurationStopwatch({
         "flex items-center gap-2 p-3 rounded-xl border-2 transition-all",
         running ? "border-primary bg-primary/5" : hasFinalValue ? "border-green-300 bg-green-50" : "border-slate-200 bg-white"
       )}>
-        {/* Time display */}
-        <div className="flex-1 flex items-center gap-2">
-          <Timer className={cn("w-4 h-4 shrink-0", running ? "text-primary animate-pulse" : "text-slate-400")} />
-          <span className={cn("text-2xl font-bold tabular-nums tracking-tight min-w-[3.5rem]",
-            running ? "text-primary" : hasFinalValue ? "text-green-700" : "text-slate-300")}>
-            {displaySeconds > 0 ? `${displaySeconds}` : "—"}
+        <Timer className={cn("w-4 h-4 shrink-0", running ? "text-primary animate-pulse" : "text-slate-400")} />
+
+        {/* Elapsed display while running; editable number input when stopped */}
+        {running ? (
+          <span className="flex-1 text-2xl font-bold tabular-nums tracking-tight text-primary">
+            {elapsed}
           </span>
-          <span className={cn("text-sm font-medium", running ? "text-primary/70" : "text-slate-400")}>sec</span>
-        </div>
+        ) : (
+          <input
+            type="number"
+            min="0"
+            step="1"
+            placeholder="—"
+            value={value ?? ""}
+            onChange={handleManualInput}
+            className="flex-1 text-2xl font-bold tabular-nums bg-transparent outline-none w-0 min-w-0 text-slate-700 placeholder:text-slate-300"
+          />
+        )}
+
+        <span className={cn("text-sm font-medium shrink-0", running ? "text-primary/70" : "text-slate-400")}>sec</span>
 
         {/* Controls */}
-        <div className="flex items-center gap-1.5">
-          {!running && !hasFinalValue && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          {!running && (
             <button type="button" onClick={start}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm shadow-primary/25">
-              <Timer className="w-3.5 h-3.5" /> Start
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm shadow-primary/25">
+              <Timer className="w-3.5 h-3.5" /> {hasFinalValue ? "Retimer" : "Start"}
             </button>
           )}
           {running && (
             <button type="button" onClick={stop}
-              className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm shadow-red-200 animate-pulse">
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm shadow-red-200 animate-pulse">
               <Square className="w-3.5 h-3.5 fill-white" /> Stop
             </button>
           )}
           {(hasFinalValue || running) && (
             <button type="button" onClick={reset}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
-              title="Reset timer">
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              title="Reset">
               <RotateCcw className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
-      {hasFinalValue && (
-        <p className="text-xs text-green-600 font-medium pl-1">✓ {value} seconds recorded</p>
-      )}
     </div>
   );
 }
