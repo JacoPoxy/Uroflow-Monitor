@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { UrineColorPicker } from "@/components/UrineColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Droplet, ArrowLeft, Loader2, X, Moon, Sun, Waves, Coffee, Zap, Beaker, Wine, GlassWater } from "lucide-react";
+import { Droplet, ArrowLeft, Loader2, X, Moon, Sun, Waves, Coffee, Zap, Beaker, Wine, GlassWater, Timer, Square, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ---- Schemas ----
@@ -137,6 +137,87 @@ function SingleChip<T extends string>({
   );
 }
 
+// ---- Duration Stopwatch ----
+function DurationStopwatch({
+  value, onChange,
+}: { value: number | null; onChange: (v: number | null) => void }) {
+  const [running, setRunning] = useState(false);
+  const [elapsed, setElapsed] = useState<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = () => {
+    setElapsed(0);
+    setRunning(true);
+    intervalRef.current = setInterval(() => {
+      setElapsed(s => s + 1);
+    }, 1000);
+  };
+
+  const stop = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setRunning(false);
+    onChange(elapsed);
+  };
+
+  const reset = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setRunning(false);
+    setElapsed(0);
+    onChange(null);
+  };
+
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  const displaySeconds = running ? elapsed : (value ?? 0);
+  const hasFinalValue = !running && value != null && value > 0;
+
+  return (
+    <div className="space-y-1">
+      <Label>Duration — Optional</Label>
+      <div className={cn(
+        "flex items-center gap-2 p-3 rounded-xl border-2 transition-all",
+        running ? "border-primary bg-primary/5" : hasFinalValue ? "border-green-300 bg-green-50" : "border-slate-200 bg-white"
+      )}>
+        {/* Time display */}
+        <div className="flex-1 flex items-center gap-2">
+          <Timer className={cn("w-4 h-4 shrink-0", running ? "text-primary animate-pulse" : "text-slate-400")} />
+          <span className={cn("text-2xl font-bold tabular-nums tracking-tight min-w-[3.5rem]",
+            running ? "text-primary" : hasFinalValue ? "text-green-700" : "text-slate-300")}>
+            {displaySeconds > 0 ? `${displaySeconds}` : "—"}
+          </span>
+          <span className={cn("text-sm font-medium", running ? "text-primary/70" : "text-slate-400")}>sec</span>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-1.5">
+          {!running && !hasFinalValue && (
+            <button type="button" onClick={start}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-sm shadow-primary/25">
+              <Timer className="w-3.5 h-3.5" /> Start
+            </button>
+          )}
+          {running && (
+            <button type="button" onClick={stop}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm shadow-red-200 animate-pulse">
+              <Square className="w-3.5 h-3.5 fill-white" /> Stop
+            </button>
+          )}
+          {(hasFinalValue || running) && (
+            <button type="button" onClick={reset}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              title="Reset timer">
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      {hasFinalValue && (
+        <p className="text-xs text-green-600 font-medium pl-1">✓ {value} seconds recorded</p>
+      )}
+    </div>
+  );
+}
+
 // ---- Voiding Tab ----
 function VoidingTab() {
   const [, setLocation] = useLocation();
@@ -148,6 +229,7 @@ function VoidingTab() {
   const [vE, setVE] = useState<number | null>(null);
   const [paintLocations, setPainLocations] = useState<string[]>([]);
   const [appearanceTags, setAppearanceTags] = useState<string[]>([]);
+  const [durationSecs, setDurationSecs] = useState<number | null>(null);
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<VoidingForm>({
     resolver: zodResolver(voidingSchema),
@@ -188,7 +270,7 @@ function VoidingTab() {
         ...data,
         voidedAt: new Date(data.voidedAt).toISOString(),
         qmax: data.qmax ?? null,
-        durationSeconds: data.durationSeconds ?? null,
+        durationSeconds: durationSecs ?? null,
         painLocations: paintLocations.length > 0 ? paintLocations : null,
         appearanceTags: appearanceTags.length > 0 ? appearanceTags : null,
       };
@@ -223,22 +305,15 @@ function VoidingTab() {
           <VolumeButtons hundreds={vH} extras={vE} onHundreds={handleHundreds} onExtras={handleExtras}
             total={totalVolume} onClear={clearVol} error={!!errors.volumeMl} />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Qmax (ml/s) — Optional</Label>
-              <div className="relative">
-                <Input type="number" min="0" step="0.1" placeholder="e.g. 12.5" {...register("qmax")} />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">ml/s</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label>Duration (sec) — Optional</Label>
-              <div className="relative">
-                <Input type="number" min="0" step="1" placeholder="e.g. 45" {...register("durationSeconds")} />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">sec</span>
-              </div>
+          <div className="space-y-1">
+            <Label>Qmax (ml/s) — Optional</Label>
+            <div className="relative">
+              <Input type="number" min="0" step="0.1" placeholder="e.g. 12.5" {...register("qmax")} />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">ml/s</span>
             </div>
           </div>
+
+          <DurationStopwatch value={durationSecs} onChange={setDurationSecs} />
 
           {/* Bedtime / Awake toggle */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
