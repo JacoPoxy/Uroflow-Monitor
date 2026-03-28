@@ -4,9 +4,10 @@ import { z } from "zod/v4";
 
 export const urineColorEnum = ["pale_yellow", "yellow", "dark_yellow", "orange", "dark_orange"] as const;
 export const hematuriaEnum = ["none", "visible_hematuria", "post_drops", "post_pink"] as const;
-export const urgencyEnum = ["none", "awareness", "urgent", "highly_urgent", "sudden_onset"] as const;
+export const urgencyEnum = ["none", "aware", "should_go_soon", "urgent", "about_to_bust", "sudden_onset"] as const;
 export const streamEnum = ["strong", "normal", "weak", "intermittent", "dribbling"] as const;
 export const painLocationEnum = ["spasm", "perineum", "shaft", "tip"] as const;
+export const painTypeEnum = ["burning", "irritation"] as const;
 export const appearanceTagEnum = ["clots", "flakes", "specks"] as const;
 
 export const voidingsTable = pgTable("voidings", {
